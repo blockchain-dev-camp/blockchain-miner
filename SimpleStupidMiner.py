@@ -1,24 +1,19 @@
 
 # coding: utf-8
 
-# In[17]:
+# In[ ]:
 
 
 import hashlib
 import requests
 import sys
 import time
+import json
 from threading import Timer
 
-#Node url is passed as command line parameter
-if len(sys.argv) < 2:
-    print("\033[91mWarning !!! No URL for the node is supplied. Using dummy URL!\033[0m")
-    nodeURL = "http://IamAdummyURL.com"
-else:
-    nodeURL = sys.argv[1]     
-    
-getTask = "/mineBlock"
-givePoW = "/mining/submit-block/"
+nodeURL = "http://178.75.234.192:5555"
+getTask = "/mineBlock/c49d0d52a2f46b694fcfdabc7388ab759d22a561"
+givePoW = "/mining/submit-block/c49d0d52a2f46b694fcfdabc7388ab759d22a561"
 global timestamp 
 timestamp = time.time()
 nonce = 0
@@ -34,18 +29,17 @@ def checkForUpdates():
     #Get the previous hash and the difficulty form the Node
     try:    
         response = requests.get(nodeURL+getTask)
-        node_data = response.json()
+        node_data = response.json()[0]
     except:
         print("\033[91mWarning! Failed to obtain data from the Node for blockHash and difficutly! Using old values!\033[0m")
         #Start with dummy data
         node_data = {
             'blockDataHash': 'Default hash before data fetch',
             'difficulty' : 5,
-        }
+        }      
         
     blockHash = node_data["blockDataHash"]
     difficulty = node_data["difficulty"]
-    
     print(f'Running for block hash:\033[92m {blockHash}\033[0m on difficulty\033[91m {difficulty}\033[0m on stamp \033[92m{timestamp}\033[0m at cumulative iteration \033[4m{nonce}\033[0m')
     return
 
@@ -55,7 +49,7 @@ def hash_256(string):
 def solutionFound(nonce,result, timestamp):
     #Push the solution to the Node
     print(f'\033[94mSolution found for\033[1m nonce = {nonce} hash = {result}\033[91m ')
-    data = {'nounce':nonce,'dateCreated':timestamp  , "blockHash":result}
+    data = json.dumps({'nounce':nonce,'dateCreated':timestamp  , "blockHash":result})
     try:    
         requests.post(nodeURL+givePoW, data=data)
     except:
@@ -63,7 +57,6 @@ def solutionFound(nonce,result, timestamp):
     return
 
 checkForUpdates()
-
 
 for nonce in range(2**1000):
     timestamp = time.time()
